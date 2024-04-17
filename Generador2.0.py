@@ -101,22 +101,22 @@ def generar_tarjeta():
         country = random.choice(list(pycountry.countries))
         country_name = country.name
 
-        tarjeta = gen_card(seis_digitos, mes, año, cvv, country_name)
-        tarjetas.append((nombre, tarjeta))
+        tarjeta = gen_card(seis_digitos, mes, año, cvv, nombre, country_name)
+        tarjetas.append(tarjeta)
 
     # Limpiar la terminal después de generar las tarjetas
     limpiar_terminal()
 
     # Mostrar el mensaje de éxito y las tarjetas generadas
     print(Fore.GREEN + "Las tarjetas se han generado con éxito." + Style.RESET_ALL)
-    for nombre, tarjeta in tarjetas:
+    for tarjeta in tarjetas:
         print("\n" + "=" * 40)
-        print(Fore.YELLOW + "Nombre:", nombre)
-        print("Número de tarjeta:", tarjeta.split('|')[0])
-        print("Fecha de expiración:", tarjeta.split('|')[1], "/", tarjeta.split('|')[2])
-        print("CVV:", tarjeta.split('|')[3])
-        print("País:", tarjeta.split('|')[4])
-        print("Tipo de tarjeta:", tarjeta.split('|')[5])
+        print(Fore.YELLOW + "Nombre:", tarjeta['nombre'])
+        print("Número de tarjeta:", tarjeta['numero'])
+        print("Fecha de expiración:", tarjeta['mes'], "/", tarjeta['año'])
+        print("CVV:", tarjeta['cvv'])
+        print("País:", tarjeta['pais'])
+        print("Tipo de tarjeta:", tarjeta['tipo'])
         print("=" * 40)
 
 def animacion_barras(iteraciones):
@@ -128,7 +128,7 @@ def animacion_barras(iteraciones):
         time.sleep(0.2)
     print(Style.RESET_ALL)
 
-def gen_card(bin, exp_m, exp_y, cvv, country_name):
+def gen_card(bin, exp_m, exp_y, cvv, nombre, country_name):
     # Generar una tarjeta
     card_number = bin
     for _ in range(15 - len(bin)):
@@ -167,7 +167,7 @@ def gen_card(bin, exp_m, exp_y, cvv, country_name):
     card = CreditCard(card_number)
 
     # Devolver los detalles de la tarjeta
-    return f"{card.number}|{exp_m}|{exp_y}|{cvv}|{country_name}|{card_type}"
+    return {'nombre': nombre, 'numero': card.number, 'mes': exp_m, 'año': exp_y, 'cvv': cvv, 'pais': country_name, 'tipo': card_type}
 
 if __name__ == "__main__":
     generar_tarjeta()
