@@ -1,0 +1,142 @@
+import random
+import time
+import os
+import datetime
+from colorama import init, Fore, Style
+from faker import Faker
+import pycountry
+import creditcard
+
+def solicitar_credenciales(intentos):
+    for intento in range(intentos):
+        # Solicitar las credenciales al usuario
+        print(Fore.YELLOW + "+" + "-" * 60 + "+")
+        print("|" + Fore.MAGENTA + "||||| Bienvenido a GENERATOR-CS |||||".center(60) + Fore.YELLOW + "|")
+        print("+" + "-" * 60 + "+" + Style.RESET_ALL)
+        usuario = input(Fore.CYAN + "Usuario: " + Style.RESET_ALL)
+        contraseña = input(Fore.CYAN + "Contraseña: " + Style.RESET_ALL)
+        if verificar_credenciales(usuario, contraseña):
+            return usuario
+        else:
+            print(Fore.RED + "Credenciales incorrectas. Intento {} de {}".format(intento + 1, intentos) + Style.RESET_ALL)
+    return None
+
+def verificar_credenciales(usuario, contraseña):
+    # Verificar si las credenciales son correctas
+    return usuario == "ck4" and contraseña == "ck4"
+
+def limpiar_terminal():
+    # Limpiar la terminal
+    os.system('clear' if os.name == 'posix' else 'cls')
+
+def personalizar_terminal():
+    # Mostrar el nombre de la herramienta en un cuadro grande
+    print(Fore.YELLOW + "+" + "-" * 60 + "+")
+    print("|" + Fore.MAGENTA + "GENERATOR-CS".center(60) + Fore.YELLOW + "|")
+    print("+" + "-" * 60 + "+" + Style.RESET_ALL)
+    print()
+
+    # Animación de bienvenida con borde de colores
+    mensaje_bienvenida = [
+        "===== Generador de Tarjetas =====",
+        "Bienvenido al mundo de los generadores de tarjetas!",
+        "Por favor, ingrese sus credenciales a continuación:"
+    ]
+    color_borde = Fore.YELLOW
+    color_texto = Fore.MAGENTA
+    longitud_maxima = max(len(linea) for linea in mensaje_bienvenida)
+    print(color_borde + "+" + "-" * (longitud_maxima + 2) + "+" + Style.RESET_ALL)
+    for linea in mensaje_bienvenida:
+        print(color_borde + "| " + color_texto + linea.ljust(longitud_maxima) + " " * (longitud_maxima - len(linea)) + " " + color_borde + "|" + Style.RESET_ALL)
+    print(color_borde + "+" + "-" * (longitud_maxima + 2) + "+" + Style.RESET_ALL)
+
+def saludo(nombre):
+    print(Fore.GREEN + "Felicidades por unirte a este mundo de generadores de tarjetas, " + Fore.YELLOW + nombre + Fore.GREEN + "!" + Style.RESET_ALL)
+
+def generar_tarjeta():
+    # Solicitar las credenciales con 5 intentos
+    usuario = solicitar_credenciales(5)
+    if usuario is None:
+        print(Fore.RED + "Has excedido el número máximo de intentos. ¡Adiós!")
+        return
+
+    # Limpiar la terminal después de ingresar las credenciales correctas
+    limpiar_terminal()
+
+    # Personalizar la terminal
+    personalizar_terminal()
+
+    # Solicitar el BIN
+    seis_digitos = input(Fore.MAGENTA + "BIN: ")
+    print(Style.RESET_ALL)
+    while len(seis_digitos) != 6 or not seis_digitos.isdigit():
+        seis_digitos = input(Fore.RED + "Por favor, ingrese exactamente 6 dígitos: ")
+        print(Style.RESET_ALL)
+
+    # Solicitar el mes de expiración
+    mes = input(Fore.MAGENTA + "Mes de expiración (MM): ")
+    print(Style.RESET_ALL)
+
+    # Solicitar el año de expiración
+    año = input(Fore.MAGENTA + "Año de expiración (YY): ")
+    print(Style.RESET_ALL)
+
+    # Solicitar cantidad de tarjetas a generar
+    cantidad = int(input(Fore.MAGENTA + "Número de tarjetas a generar: "))
+    print(Style.RESET_ALL)
+    print("\nGenerando tarjetas:")
+    animacion_barras(5)
+
+    # Generar tarjetas
+    tarjetas = []
+    for _ in range(cantidad):
+        # Generar nombre aleatorio para cada tarjeta
+        fake = Faker()
+        nombre = fake.name()
+
+        # Generar CVV aleatorio
+        cvv = str(random.randint(0, 999)).zfill(3)
+
+        # Generar país aleatorio
+        country = random.choice(list(pycountry.countries))
+        country_name = country.name
+
+        tarjeta = gen_card(seis_digitos, mes, año, cvv, nombre, country_name)
+        tarjetas.append(tarjeta)
+
+    # Limpiar la terminal después de generar las tarjetas
+    limpiar_terminal()
+
+    # Mostrar el mensaje de éxito y las tarjetas generadas
+    print(Fore.GREEN + "Las tarjetas se han generado con éxito." + Style.RESET_ALL)
+    for tarjeta in tarjetas:
+        print("\n" + "=" * 40)
+        print(Fore.YELLOW + "Nombre:", tarjeta['nombre'])
+        print("Número de tarjeta:", tarjeta['numero'])
+        print("Fecha de expiración:", tarjeta['mes'], "/", tarjeta['año'])
+        print("CVV:", tarjeta['cvv'])
+        print("País:", tarjeta['pais'])
+        print("Tipo de tarjeta:", tarjeta['tipo'])
+        print("=" * 40)
+
+def animacion_barras(iteraciones):
+    for _ in range(iteraciones):
+        time.sleep(0.2)
+        print(Fore.MAGENTA + "=" * 40, end="\r")
+        time.sleep(0.2)
+        print(Fore.MAGENTA + "-" * 40, end="\r")
+        time.sleep(0.2)
+    print(Style.RESET_ALL)
+
+def gen_card(bin, exp_m, exp_y, cvv, nombre, country_name):
+    # Generar una tarjeta válida
+    card = creditcard.Card()
+    card_number = card.generate_card_number(int(bin), card_type='VISA')
+    card_expiry = f"{exp_m}/{exp_y}"
+    card_cvv = cvv
+
+    # Devolver los detalles de la tarjeta
+    return {'nombre': nombre, 'numero': card_number, 'mes': exp_m, 'año': exp_y, 'cvv': cvv, 'pais': country_name, 'tipo': 'VISA'}
+
+if __name__ == "__main__":
+    generar_tarjeta()
