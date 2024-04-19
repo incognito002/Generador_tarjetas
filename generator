@@ -5,7 +5,7 @@ import datetime
 from colorama import init, Fore, Style
 from faker import Faker
 import pycountry
-import creditcard
+import re
 
 def solicitar_credenciales(intentos):
     for intento in range(intentos):
@@ -53,6 +53,22 @@ def personalizar_terminal():
 def saludo(nombre):
     print(Fore.GREEN + "Felicidades por unirte a este mundo de generadores de tarjetas, " + Fore.YELLOW + nombre + Fore.GREEN + "!" + Style.RESET_ALL)
 
+def validar_bin(bin):
+    # Definir patrones de BIN para diferentes esquemas de tarjetas
+    patrones = {
+        "Visa": "^4[0-9]{12}(?:[0-9]{3})?$",
+        "Mastercard": "^5[1-5][0-9]{14}$",
+        "American Express": "^3[47][0-9]{13}$",
+        # Agrega más patrones según sea necesario
+    }
+
+    # Iterar sobre los patrones y verificar si el BIN coincide con alguno de ellos
+    for esquema, patron in patrones.items():
+        if re.match(patron, bin):
+            return True, esquema
+    
+    return False, None
+
 def generar_tarjeta():
     # Solicitar las credenciales con 5 intentos
     usuario = solicitar_credenciales(5)
@@ -73,6 +89,13 @@ def generar_tarjeta():
         seis_digitos = input(Fore.RED + "Por favor, ingrese exactamente 6 dígitos: ")
         print(Style.RESET_ALL)
 
+    # Verificar la validez del BIN
+    valido, esquema = validar_bin(seis_digitos)
+    if not valido:
+        print(Fore.RED + "El BIN ingresado no es válido." + Style.RESET_ALL)
+        return
+
+    # Continuar con la generación de tarjetas
     # Solicitar el mes de expiración
     mes = input(Fore.MAGENTA + "Mes de expiración (MM): ")
     print(Style.RESET_ALL)
@@ -101,22 +124,22 @@ def generar_tarjeta():
         country = random.choice(list(pycountry.countries))
         country_name = country.name
 
-        tarjeta = gen_card(seis_digitos, mes, año, cvv, nombre, country_name)
-        tarjetas.append(tarjeta)
+        tarjeta = gen_card(seis_digitos, mes, año, cvv, country_name)
+        tarjetas.append((nombre, tarjeta))
 
     # Limpiar la terminal después de generar las tarjetas
     limpiar_terminal()
 
     # Mostrar el mensaje de éxito y las tarjetas generadas
     print(Fore.GREEN + "Las tarjetas se han generado con éxito." + Style.RESET_ALL)
-    for tarjeta in tarjetas:
+    for nombre, tarjeta in tarjetas:
         print("\n" + "=" * 40)
-        print(Fore.YELLOW + "Nombre:", tarjeta['nombre'])
-        print("Número de tarjeta:", tarjeta['numero'])
-        print("Fecha de expiración:", tarjeta['mes'], "/", tarjeta['año'])
-        print("CVV:", tarjeta['cvv'])
-        print("País:", tarjeta['pais'])
-        print("Tipo de tarjeta:", tarjeta['tipo'])
+        print(Fore.YELLOW + "Nombre:", nombre)
+        print("Número de tarjeta:", tarjeta.split('|')[0])
+        print("Fecha de expiración:", tarjeta.split('|')[1], "/", tarjeta.split('|')[2])
+        print("CVV:", tarjeta.split('|')[3])
+        print("País:", tarjeta.split('|')[4])
+        print("Tipo de tarjeta:", tarjeta.split('|')[5])
         print("=" * 40)
 
 def animacion_barras(iteraciones):
@@ -128,15 +151,41 @@ def animacion_barras(iteraciones):
         time.sleep(0.2)
     print(Style.RESET_ALL)
 
-def gen_card(bin, exp_m, exp_y, cvv, nombre, country_name):
-    # Generar una tarjeta válida
-    card = creditcard.Card()
-    card_number = card.generate_card_number(int(bin), card_type='VISA')
-    card_expiry = f"{exp_m}/{exp_y}"
-    card_cvv = cvv
+def gen_card(bin, exp_m, exp_y, cvv, country_name):
+    # Generar una tarjeta
+    card_number = bin
+    for _ in range(15 - len(bin)):
+        digit = random.randint(0, 9)
+        card_number += str(digit)
+    digits = [int(x) for x in card_number]
+    for i in range(0, 16, 2):
+        digits[i] *= 2
+        if digits[i] > 9:
+            digits[i] -= 9
+    total = sum(digits)
+    check_digit = (10 - (total % 10)) % 10
+    card_number += str(check_digit)
 
-    # Devolver los detalles de la tarjeta
-    return {'nombre': nombre, 'numero': card_number, 'mes': exp_m, 'año': exp_y, 'cvv': cvv, 'pais': country_name, 'tipo': 'VISA'}
+    if exp_m == "":
+        exp_m = str(random.randint(1, 12)).zfill(2)
+    else:
+        exp_m = exp_m.zfill(2)
+
+    if exp_y == "":
+        current_year = datetime.datetime.now().year
+        random_offset = random.randint(1, 5)
+        exp_y = current_year + random_offset
+    elif int(exp_y) >= 10 and int(exp_y) <= 99:
+        exp_y = "20" + exp_y
+
+    if cvv == "":
+        cvv = str(random.randint(0, 999)).zfill(3)
+    else:
+        cvv = cvv.zfill(3)
+
+    # Generar tarjeta Visa, Mastercard, American Express u otro tipo de manera aleatoria
+    card_type = random.choice(["Visa", "Mastercard", "American Express", "Otro"])
+    return f"{card_number}|{exp_m}|{exp_y}|{cvv}|{country_name}|{card_type}"
 
 if __name__ == "__main__":
     generar_tarjeta()
