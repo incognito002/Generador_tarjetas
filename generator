@@ -4,8 +4,7 @@ import os
 import datetime
 from colorama import init, Fore, Style
 from faker import Faker
-import pycountry
-import re
+import requests
 
 def solicitar_credenciales(intentos):
     for intento in range(intentos):
@@ -53,22 +52,6 @@ def personalizar_terminal():
 def saludo(nombre):
     print(Fore.GREEN + "Felicidades por unirte a este mundo de generadores de tarjetas, " + Fore.YELLOW + nombre + Fore.GREEN + "!" + Style.RESET_ALL)
 
-def validar_bin(bin):
-    # Definir patrones de BIN para diferentes esquemas de tarjetas
-    patrones = {
-        "Visa": "^4[0-9]{12}(?:[0-9]{3})?$",
-        "Mastercard": "^5[1-5][0-9]{14}$",
-        "American Express": "^3[47][0-9]{13}$",
-        # Agrega más patrones según sea necesario
-    }
-
-    # Iterar sobre los patrones y verificar si el BIN coincide con alguno de ellos
-    for esquema, patron in patrones.items():
-        if re.match(patron, bin):
-            return True, esquema
-    
-    return False, None
-
 def generar_tarjeta():
     # Solicitar las credenciales con 5 intentos
     usuario = solicitar_credenciales(5)
@@ -89,13 +72,6 @@ def generar_tarjeta():
         seis_digitos = input(Fore.RED + "Por favor, ingrese exactamente 6 dígitos: ")
         print(Style.RESET_ALL)
 
-    # Verificar la validez del BIN
-    valido, esquema = validar_bin(seis_digitos)
-    if not valido:
-        print(Fore.RED + "El BIN ingresado no es válido." + Style.RESET_ALL)
-        return
-
-    # Continuar con la generación de tarjetas
     # Solicitar el mes de expiración
     mes = input(Fore.MAGENTA + "Mes de expiración (MM): ")
     print(Style.RESET_ALL)
@@ -154,9 +130,10 @@ def animacion_barras(iteraciones):
 def gen_card(bin, exp_m, exp_y, cvv, country_name):
     # Generar una tarjeta
     card_number = bin
-    for _ in range(15 - len(bin)):
+    for _ in range(10):  # Cambiamos el rango a 10 para completar los 16 dígitos del número de tarjeta
         digit = random.randint(0, 9)
         card_number += str(digit)
+    # Calculamos el dígito de verificación usando el algoritmo de Luhn
     digits = [int(x) for x in card_number]
     for i in range(0, 16, 2):
         digits[i] *= 2
